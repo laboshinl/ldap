@@ -63,7 +63,7 @@ EOF
 yum -y install openldap-servers openldap-clients
 
 # Create backend database.
-cp /usr/share/doc/openldap-servers-2.4.19/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
+cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
 chown -R ldap:ldap /var/lib/ldap
 
 # Set password for cn=admin,cn=config (it's secret)
@@ -97,7 +97,7 @@ EOF
 service rsyslog restart
 
 # Do the configurations.
-ldapadd -H ldap://ldap.syco.net -x -D "cn=admin,cn=config" -w secret << EOF
+ldapadd -H ldap:/// -x -D "cn=config" -w secret << EOF
 
 # Setup logfile (not working now, propably needing debug level settings.)
 dn: cn=config
@@ -151,7 +151,7 @@ EOF
 ##########################################################
 
 # Copy the sudo Schema into the LDAP schema repository
-/bin/cp -f /usr/share/doc/sudo-1.7.2p2/schema.OpenLDAP /etc/openldap/schema/sudo.schema
+/bin/cp -f /usr/share/doc/$(ls /usr/share/doc | grep sudo)/schema.OpenLDAP /etc/openldap/schema/sudo.schema
 restorecon /etc/openldap/schema/sudo.schema
 
 # Create a conversion file for schema
@@ -168,10 +168,10 @@ sed -i "s/{0}sudo/sudo/g" ~/sudoWork/sudo.ldif
 head -n-8 ~/sudoWork/sudo.ldif > ~/sudoWork/sudo2.ldif
 
 # Load the schema into the LDAP server
-ldapadd -H ldap:/// -x -D "cn=admin,cn=config" -w secret -f ~/sudoWork/sudo2.ldif
+ldapadd -H ldap:/// -x -D "cn=config" -w secret -f ~/sudoWork/sudo2.ldif
 
 # Add index to sudoers db
-ldapadd -H ldap:/// -x -D "cn=admin,cn=config" -w secret << EOF
+ldapadd -H ldap:/// -x -D "cn=config" -w secret << EOF
 dn: olcDatabase={2}bdb,cn=config
 changetype: modify
 add: olcDbIndex
@@ -182,7 +182,7 @@ EOF
 # Create modules area
 #
 ###########################################################
-ldapadd -H ldap:/// -x -D "cn=admin,cn=config" -w secret << EOF
+ldapadd -H ldap:/// -x -D "cn=config" -w secret << EOF
 dn: cn=module{0},cn=config
 objectClass: olcModuleList
 cn: module{0}
@@ -194,7 +194,7 @@ EOF
 #
 # http://www.manpagez.com/man/5/slapo-auditlog/
 ###########################################################
-ldapadd -H ldap:/// -x -D "cn=admin,cn=config" -w secret << EOF
+ldapadd -H ldap:/// -x -D "cn=config" -w secret << EOF
 dn: cn=module{0},cn=config
 changetype:modify
 add: olcModuleLoad
@@ -247,7 +247,7 @@ EOF
 # http://www.symas.com/blog/?page_id=66
 ###########################################################
 
-ldapadd -H ldap:/// -x -D "cn=admin,cn=config" -w secret << EOF
+ldapadd -H ldap:/// -x -D "cn=config" -w secret << EOF
 dn: cn=module{0},cn=config
 changetype:modify
 add: olcModuleLoad
@@ -341,7 +341,7 @@ restorecon -R /etc/openldap/cacerts
 # http://www.openldap.org/pub/ksoper/OpenLDAP_TLS.html#4.0
 # http://www.openldap.org/faq/data/cache/185.html
 ###########################################################
-ldapadd -H ldap:/// -x -D "cn=admin,cn=config" -w secret << EOF
+ldapadd -H ldap:/// -x -D "cn=config" -w secret << EOF
 dn: cn=config
 changetype:modify
 replace: olcTLSCertificateKeyFile
@@ -375,7 +375,7 @@ EOF
 ###########################################################
 # Require higher security from clients.
 ###########################################################
-ldapadd -H ldaps://ldap.syco.net -x -D "cn=admin,cn=config" -w secret << EOF
+ldapadd -H ldaps://ldap.syco.net -x -D "cn=config" -w secret << EOF
 dn: cn=config
 changetype:modify
 replace: olcLocalSSF
@@ -452,3 +452,4 @@ iptables -I INPUT -m state --state NEW -p tcp -s 10.100.110.7/24 --dport 636 -j 
 # ldapsearch -D "cn=admin,cn=config" -w secret -b uid=user4,ou=people,dc=syco,dc=net
 # # Return my self.
 # ldapsearch -b uid=user1,ou=people,dc=syco,dc=net -D "uid=user1,ou=people,dc=syco,dc=net" -w fratsecret
+
